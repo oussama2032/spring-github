@@ -5,8 +5,7 @@ on:
     branches: ["main"]
 
 jobs:
-  build_test_sonar_nexus:
-    name: Build + Sonar + Nexus
+  build_sonar_nexus:
     runs-on: self-hosted
 
     steps:
@@ -19,6 +18,24 @@ jobs:
           distribution: temurin
           java-version: "17"
 
+      - name: Create Maven settings.xml for Nexus
+        run: |
+          mkdir -p ~/.m2
+          cat > ~/.m2/settings.xml <<'EOF'
+          <settings>
+            <servers>
+              <server>
+                <id>nexus</id>
+                <username>${env.NEXUS_USER}</username>
+                <password>${env.NEXUS_PASSWORD}</password>
+              </server>
+            </servers>
+          </settings>
+          EOF
+        env:
+          NEXUS_USER: ${{ secrets.NEXUS_USER }}
+          NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
+
       - name: Build with Maven
         run: mvn -B clean verify
 
@@ -30,15 +47,11 @@ jobs:
             -Dsonar.login=${{ secrets.SONAR_TOKEN }}
 
       - name: Deploy to Nexus
-        run: mvn deploy -DskipTests
-        env:
-          NEXUS_USER: ${{ secrets.NEXUS_USER }}
-          NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
+        run: mvn -B deploy -DskipTests
 
   docker:
-    name: Build & Push Docker Image
     runs-on: self-hosted
-    needs: build_test_sonar_nexus
+    needs: build_sonar_nexus
 
     steps:
       - name: Checkout
