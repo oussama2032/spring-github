@@ -22,10 +22,11 @@ jobs:
         run: mvn -B package --file pom.xml
 
       - name: SonarQube Scan
-        run: mvn sonar:sonar \
-          -Dsonar.projectKey=spring-github \
-          -Dsonar.host.url=http://localhost:9000 \
-          -Dsonar.login=squ_f4635edc1187454005af69d58d8a66fdb95a4ca4
+        run: |
+          mvn sonar:sonar \
+            -Dsonar.projectKey=spring-github \
+            -Dsonar.host.url=http://localhost:9000 \
+            -Dsonar.login=${{ secrets.SONAR_TOKEN }}
 
       - name: Deploy to Nexus
         run: mvn deploy -DskipTests
